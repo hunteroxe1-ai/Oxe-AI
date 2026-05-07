@@ -1,407 +1,656 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OXE AI</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-  <link rel="manifest" href="manifest.json">
+<title>OXE AI</title>
 
-  <script src="https://cdn.tailwindcss.com"></script>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
 
-  <style>
-    body {
-      background: #0d0d0d;
-      color: white;
-      font-family: Arial, sans-serif;
-      overflow: hidden;
-    }
+<script src="https://cdn.tailwindcss.com"></script>
 
-    .glass {
-      background: rgba(255,255,255,0.05);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255,255,255,0.1);
-    }
+<style>
 
-    .chat-box {
-      height: calc(100vh - 170px);
-      overflow-y: auto;
-    }
+body{
+  margin:0;
+  padding:0;
+  background:#0d0d0d;
+  color:white;
+  font-family:Arial,sans-serif;
+  overflow:hidden;
+}
 
-    .user {
-      background: #ff9900;
-      color: black;
-      margin-left: auto;
-    }
+.glass{
+  background:rgba(255,255,255,0.05);
+  backdrop-filter:blur(12px);
+  border:1px solid rgba(255,153,0,0.2);
+}
 
-    .ai {
-      background: #1b1b1b;
-      margin-right: auto;
-    }
+.chat-box{
+  flex:1;
+  overflow-y:auto;
+  padding:15px;
+  display:flex;
+  flex-direction:column;
+  gap:15px;
+}
 
-    ::-webkit-scrollbar {
-      width: 6px;
-    }
+.user-message{
+  background:#ff9900;
+  color:black;
+  align-self:flex-end;
+  max-width:80%;
+  padding:14px;
+  border-radius:20px;
+  word-wrap:break-word;
+}
 
-    ::-webkit-scrollbar-thumb {
-      background: #ff9900;
-      border-radius: 20px;
-    }
-  </style>
+.ai-message{
+  background:#1b1b1b;
+  border:1px solid rgba(255,153,0,0.2);
+  align-self:flex-start;
+  max-width:80%;
+  padding:14px;
+  border-radius:20px;
+  word-wrap:break-word;
+}
+
+input{
+  color:white;
+}
+
+input::placeholder{
+  color:#888;
+}
+
+.menu{
+  position:absolute;
+  top:60px;
+  left:10px;
+  width:240px;
+  background:#171717;
+  border:1px solid rgba(255,153,0,0.2);
+  border-radius:20px;
+  padding:10px;
+  display:none;
+  z-index:999;
+}
+
+.menu button{
+  width:100%;
+  margin-bottom:10px;
+  padding:14px;
+  border:none;
+  border-radius:15px;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.light-mode{
+  background:white;
+  color:black;
+}
+
+.light-mode .glass{
+  background:#f3f3f3;
+  color:black;
+}
+
+.light-mode .ai-message{
+  background:#e5e5e5;
+  color:black;
+}
+
+::-webkit-scrollbar{
+  width:6px;
+}
+
+::-webkit-scrollbar-thumb{
+  background:#ff9900;
+  border-radius:20px;
+}
+
+</style>
 </head>
+
 <body>
 
-<div id="app" class="h-screen flex flex-col">
+<!-- MENU -->
+<div id="menu" class="menu glass">
 
-  <!-- HEADER -->
-  <div class="glass p-4 flex items-center justify-between border-b border-orange-500">
-    <div>
-      <h1 class="text-2xl font-bold text-orange-400">OXE AI</h1>
-      <p class="text-sm text-gray-400">Futuristic AI Assistant</p>
-    </div>
+<button
+onclick="toggleTheme()"
+class="bg-purple-600 text-white"
+>
+Dark / Light Mode
+</button>
 
-    <button onclick="logout()" class="bg-red-500 px-4 py-2 rounded-xl font-bold">
-      Logout
-    </button>
-  </div>
+<button
+onclick="openCreatorChat()"
+class="bg-green-600 text-white"
+>
+Chat With Creator
+</button>
 
-  <!-- CHAT AREA -->
-  <div id="chatBox" class="chat-box p-4 flex flex-col gap-4"></div>
+<button
+onclick="showHistory()"
+class="bg-orange-500 text-black"
+>
+Saved Chats
+</button>
 
-  <!-- INPUT -->
-  <div class="glass p-4 border-t border-orange-500 flex gap-3">
+<button
+onclick="logout()"
+class="bg-red-500 text-white"
+>
+Logout
+</button>
 
-    <input
-      id="messageInput"
-      type="text"
-      placeholder="Ask anything..."
-      class="flex-1 p-4 rounded-2xl bg-[#171717] outline-none"
-    />
-
-    <button
-      onclick="sendMessage()"
-      class="bg-orange-500 px-6 rounded-2xl font-bold"
-    >
-      Send
-    </button>
-  </div>
 </div>
 
+<!-- MAIN APP -->
+<div class="w-full h-screen flex flex-col">
+
+<!-- HEADER -->
+<div class="glass p-4 flex items-center justify-between">
+
+<div class="flex items-center gap-3">
+
+<button
+onclick="toggleMenu()"
+class="text-3xl text-orange-400"
+>
+☰
+</button>
+
+<div>
+<h1 class="text-2xl font-bold text-orange-400">
+OXE AI
+</h1>
+
+<p class="text-sm text-gray-400">
+Powered by OXE Intelligence
+</p>
+</div>
+
+</div>
+
+</div>
+
+<!-- CHAT AREA -->
+<div
+id="chatBox"
+class="chat-box"
+></div>
+
+<!-- INPUT -->
+<div class="glass p-3 flex gap-3">
+
+<input
+id="messageInput"
+type="text"
+placeholder="Ask anything..."
+class="flex-1 p-4 rounded-2xl bg-[#1b1b1b] border border-orange-500 outline-none"
+/>
+
+<button
+onclick="sendMessage()"
+class="bg-orange-500 px-6 rounded-2xl font-bold"
+>
+Send
+</button>
+
+</div>
+
+</div>
 
 <!-- LOGIN MODAL -->
-<div id="loginModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+<div
+id="loginModal"
+class="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
+>
 
-  <div class="glass p-8 rounded-3xl w-[350px] border border-orange-500">
+<div class="glass p-8 rounded-3xl w-[95%] max-w-md">
 
-    <h1 class="text-3xl font-bold text-orange-400 text-center mb-6">
-      OXE AI
-    </h1>
+<h1 class="text-3xl font-bold text-orange-400 text-center mb-6">
+OXE AI
+</h1>
 
-    <input
-      id="username"
-      type="text"
-      placeholder="Username"
-      class="w-full p-3 rounded-xl bg-black mb-4"
-    />
+<input
+id="username"
+type="text"
+placeholder="Username"
+class="w-full p-4 rounded-2xl bg-[#1b1b1b] border border-orange-500 outline-none mb-4"
+/>
 
-    <input
-      id="phone"
-      type="text"
-      placeholder="Phone Number"
-      class="w-full p-3 rounded-xl bg-black mb-4"
-    />
+<input
+id="phone"
+type="text"
+placeholder="Phone Number"
+class="w-full p-4 rounded-2xl bg-[#1b1b1b] border border-orange-500 outline-none mb-4"
+/>
 
-    <input
-      id="password"
-      type="password"
-      placeholder="Password"
-      class="w-full p-3 rounded-xl bg-black mb-4"
-    />
+<input
+id="password"
+type="password"
+placeholder="Password"
+class="w-full p-4 rounded-2xl bg-[#1b1b1b] border border-orange-500 outline-none mb-4"
+/>
 
-    <p class="text-red-500 text-sm mb-4">
-      Use your real phone number so you can log in easily later.
-      There is currently no password recovery system.
-      Please use a password you will never forget.
-    </p>
+<p class="text-red-500 text-sm mb-5">
+Use your real phone number so you can log in easily later.
+There is currently no password recovery system.
+Please use a password you will never forget.
+</p>
 
-    <button
-      onclick="createAccount()"
-      class="w-full bg-orange-500 p-3 rounded-xl font-bold"
-    >
-      Create Account
-    </button>
+<button
+onclick="createAccount()"
+class="w-full bg-orange-500 p-4 rounded-2xl font-bold"
+>
+Create Account
+</button>
 
-    <button
-      onclick="login()"
-      class="w-full bg-purple-600 p-3 rounded-xl font-bold mt-4"
-    >
-      Login
-    </button>
+<p
+onclick="login()"
+class="text-center text-orange-400 mt-5 cursor-pointer font-bold"
+>
+Already have an account? Login here
+</p>
 
-    <button
-      onclick="guestMode()"
-      class="w-full border border-orange-500 p-3 rounded-xl mt-4"
-    >
-      Continue as Guest
-    </button>
-  </div>
+<button
+onclick="guestMode()"
+class="w-full border border-orange-500 p-4 rounded-2xl mt-4"
+>
+Continue as Guest
+</button>
+
+</div>
+
 </div>
 
 <script>
 
-// ===========================
-// CONFIG
-// ===========================
-
-const BACKEND_URL = "http://localhost:5000/chat"
-
-// ===========================
-// STORAGE
-// ===========================
+const BACKEND_URL =
+"https://YOUR-BACKEND.onrender.com/chat"
 
 let guestMessages = 0
 
-// ===========================
-// CHAT FUNCTION
-// ===========================
+// MENU
+function toggleMenu(){
 
-async function sendMessage() {
+const menu =
+document.getElementById("menu")
 
-  const input = document.getElementById('messageInput')
-  const chatBox = document.getElementById('chatBox')
+if(menu.style.display === "block"){
 
-  const message = input.value.trim()
+menu.style.display = "none"
 
-  if (!message) return
+}else{
 
-  // Guest limit
-  if (localStorage.getItem('guest') === 'true') {
-
-    guestMessages++
-
-    if (guestMessages > 10) {
-      alert('Guest limit reached. Create account for unlimited access.')
-      return
-    }
-  }
-
-  // Add user message
-  addMessage(message, 'user')
-
-  input.value = ''
-
-  try {
-
-    const response = await fetch(BACKEND_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        message
-      })
-    })
-
-    const data = await response.json()
-
-    addMessage(data.reply, 'ai')
-
-  } catch (error) {
-
-    addMessage('Connection failed.', 'ai')
-  }
+menu.style.display = "block"
+}
 }
 
-// ===========================
+// THEME
+function toggleTheme(){
+
+document.body.classList.toggle("light-mode")
+}
+
+// WHATSAPP
+function openCreatorChat(){
+
+window.open(
+"https://wa.me/265986445528",
+"_blank"
+)
+}
+
+// SEND MESSAGE
+async function sendMessage(){
+
+const input =
+document.getElementById("messageInput")
+
+const message =
+input.value.trim()
+
+if(!message) return
+
+// SPECIAL CHECK
+if(
+message.toLowerCase().includes("ndine phillimon") ||
+message.toLowerCase().includes("i am phillimon")
+){
+
+const secret =
+prompt(
+"Enter creator verification password"
+)
+
+if(secret === "Phillimon0026"){
+
+addMessage(
+"Welcome back Creator Phillimon Isaac.",
+"ai"
+)
+
+}else{
+
+addMessage(
+"Verification failed.",
+"ai"
+)
+
+return
+}
+}
+
+// GUEST LIMIT
+if(localStorage.getItem("guest") === "true"){
+
+guestMessages++
+
+if(guestMessages > 10){
+
+alert(
+"Guest limit reached. Create account for unlimited access."
+)
+
+return
+}
+}
+
+addMessage(message,"user")
+
+input.value = ""
+
+try{
+
+const response =
+await fetch(BACKEND_URL,{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+message
+})
+
+})
+
+const data =
+await response.json()
+
+addMessage(
+data.reply,
+"ai"
+)
+
+saveChat(message,data.reply)
+
+}catch(error){
+
+addMessage(
+"Connection failed.",
+"ai"
+)
+}
+}
+
 // ADD MESSAGE
-// ===========================
+function addMessage(text,type){
 
-function addMessage(text, type) {
+const chatBox =
+document.getElementById("chatBox")
 
-  const chatBox = document.getElementById('chatBox')
+const div =
+document.createElement("div")
 
-  const div = document.createElement('div')
+div.className =
+type === "user"
+? "user-message"
+: "ai-message"
 
-  div.className = `
-    ${type}
-    max-w-[80%]
-    p-4
-    rounded-2xl
-  `
+div.innerText = text
 
-  div.innerText = text
+chatBox.appendChild(div)
 
-  chatBox.appendChild(div)
-
-  chatBox.scrollTop = chatBox.scrollHeight
+chatBox.scrollTop =
+chatBox.scrollHeight
 }
 
-// ===========================
-// ACCOUNT SYSTEM
-// ===========================
+// SAVE CHAT
+function saveChat(userMsg,aiMsg){
 
-function createAccount() {
+if(
+localStorage.getItem("loggedIn")
+!== "true"
+) return
 
-  const username = document.getElementById('username').value
-  const phone = document.getElementById('phone').value
-  const password = document.getElementById('password').value
+let chats =
+JSON.parse(
+localStorage.getItem("oxeChats")
+) || []
 
-  if (!username || !phone || !password) {
-    alert('Fill all fields')
-    return
-  }
+chats.push({
+user:userMsg,
+ai:aiMsg
+})
 
-  const user = {
-    username,
-    phone,
-    password
-  }
-
-  localStorage.setItem('oxeUser', JSON.stringify(user))
-
-  alert('Account created successfully')
-
-  sendUserToEmail(username, phone)
-
-  closeModal()
+localStorage.setItem(
+"oxeChats",
+JSON.stringify(chats)
+)
 }
 
-// ===========================
+// SHOW HISTORY
+function showHistory(){
+
+const chats =
+JSON.parse(
+localStorage.getItem("oxeChats")
+) || []
+
+if(chats.length === 0){
+
+alert("No saved chats.")
+
+return
+}
+
+document.getElementById(
+"chatBox"
+).innerHTML = ""
+
+chats.forEach(chat=>{
+
+addMessage(chat.user,"user")
+
+addMessage(chat.ai,"ai")
+})
+}
+
+// CREATE ACCOUNT
+async function createAccount(){
+
+const username =
+document.getElementById("username").value
+
+const phone =
+document.getElementById("phone").value
+
+const password =
+document.getElementById("password").value
+
+if(!username || !phone || !password){
+
+alert("Fill all fields")
+
+return
+}
+
+const user = {
+username,
+phone,
+password
+}
+
+localStorage.setItem(
+"oxeUser",
+JSON.stringify(user)
+)
+
+localStorage.setItem(
+"loggedIn",
+"true"
+)
+
+// SEND TO EMAIL BACKEND
+try{
+
+await fetch(
+"https://YOUR-BACKEND.onrender.com/register",
+{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+username,
+phone
+})
+}
+)
+
+}catch(err){}
+
+alert(
+"Account created successfully"
+)
+
+closeModal()
+
+addMessage(
+`Welcome ${username} to OXE AI.`,
+"ai"
+)
+}
+
 // LOGIN
-// ===========================
+function login(){
 
-function login() {
+const phone =
+document.getElementById("phone").value
 
-  const phone = document.getElementById('phone').value
-  const password = document.getElementById('password').value
+const password =
+document.getElementById("password").value
 
-  const user = JSON.parse(localStorage.getItem('oxeUser'))
+const user =
+JSON.parse(
+localStorage.getItem("oxeUser")
+)
 
-  if (!user) {
-    alert('No account found')
-    return
-  }
+if(!user){
 
-  if (user.phone === phone && user.password === password) {
+alert("No account found")
 
-    localStorage.setItem('loggedIn', 'true')
-
-    closeModal()
-
-    addMessage('Welcome back to OXE AI.', 'ai')
-
-  } else {
-
-    alert('Invalid login details')
-  }
+return
 }
 
-// ===========================
-// GUEST MODE
-// ===========================
+if(
+user.phone === phone &&
+user.password === password
+){
 
-function guestMode() {
+localStorage.setItem(
+"loggedIn",
+"true"
+)
 
-  localStorage.setItem('guest', 'true')
+closeModal()
 
-  closeModal()
+addMessage(
+`Welcome back ${user.username}.`,
+"ai"
+)
 
-  addMessage('Welcome Guest User.', 'ai')
+}else{
+
+alert("Invalid login details")
+}
 }
 
-// ===========================
+// GUEST
+function guestMode(){
+
+localStorage.setItem(
+"guest",
+"true"
+)
+
+closeModal()
+
+addMessage(
+"Welcome Guest User.",
+"ai"
+)
+}
+
 // LOGOUT
-// ===========================
+function logout(){
 
-function logout() {
+localStorage.removeItem("loggedIn")
+localStorage.removeItem("guest")
 
-  localStorage.removeItem('loggedIn')
-  localStorage.removeItem('guest')
-
-  location.reload()
+location.reload()
 }
 
-// ===========================
 // CLOSE MODAL
-// ===========================
+function closeModal(){
 
-function closeModal() {
-
-  document.getElementById('loginModal').style.display = 'none'
+document.getElementById(
+"loginModal"
+).style.display = "none"
 }
 
-// ===========================
-// EMAIL FUNCTION
-// ===========================
-
-function sendUserToEmail(username, phone) {
-
-  console.log('Send to email:', username, phone)
-
-  // REAL EMAIL SENDING HAPPENS IN BACKEND
-}
-
-// ===========================
 // ENTER KEY
-// ===========================
-
 document
-  .getElementById('messageInput')
-  .addEventListener('keypress', function(e) {
+.getElementById("messageInput")
+.addEventListener(
+"keypress",
+function(e){
 
-    if (e.key === 'Enter') {
-      sendMessage()
-    }
-  })
+if(e.key === "Enter"){
 
-// ===========================
-// PHILLIMON DETECTION
-// ===========================
-
-async function specialCheck(message) {
-
-  if (
-    message.toLowerCase().includes('i am phillimon') ||
-    message.toLowerCase().includes('ndine phillimon')
-  ) {
-
-    const password = prompt('Enter creator verification password')
-
-    if (password === 'Phillimon0026') {
-
-      addMessage(
-        'Welcome back Creator Phillimon Isaac. Respect level activated.',
-        'ai'
-      )
-
-    } else {
-
-      addMessage(
-        'Verification failed. You are not recognized as the verified creator.',
-        'ai'
-      )
-    }
-  }
+sendMessage()
 }
+}
+)
 
-// ===========================
 // STARTUP
-// ===========================
+window.onload = ()=>{
 
-window.onload = () => {
+if(
+localStorage.getItem("loggedIn")
+=== "true" ||
 
-  if (
-    localStorage.getItem('loggedIn') === 'true' ||
-    localStorage.getItem('guest') === 'true'
-  ) {
+localStorage.getItem("guest")
+=== "true"
+){
 
-    closeModal()
+closeModal()
 
-    addMessage(
-      'Welcome to OXE AI. Ask anything.',
-      'ai'
-    )
-  }
+addMessage(
+"Welcome to OXE AI.",
+"ai"
+)
+}
 }
 
 </script>
