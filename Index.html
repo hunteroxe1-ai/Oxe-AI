@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OXE AI</title>
+
+  <link rel="manifest" href="manifest.json">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    body {
+      background: #0d0d0d;
+      color: white;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
+
+    .glass {
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .chat-box {
+      height: calc(100vh - 170px);
+      overflow-y: auto;
+    }
+
+    .user {
+      background: #ff9900;
+      color: black;
+      margin-left: auto;
+    }
+
+    .ai {
+      background: #1b1b1b;
+      margin-right: auto;
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #ff9900;
+      border-radius: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="app" class="h-screen flex flex-col">
+
+  <!-- HEADER -->
+  <div class="glass p-4 flex items-center justify-between border-b border-orange-500">
+    <div>
+      <h1 class="text-2xl font-bold text-orange-400">OXE AI</h1>
+      <p class="text-sm text-gray-400">Futuristic AI Assistant</p>
+    </div>
+
+    <button onclick="logout()" class="bg-red-500 px-4 py-2 rounded-xl font-bold">
+      Logout
+    </button>
+  </div>
+
+  <!-- CHAT AREA -->
+  <div id="chatBox" class="chat-box p-4 flex flex-col gap-4"></div>
+
+  <!-- INPUT -->
+  <div class="glass p-4 border-t border-orange-500 flex gap-3">
+
+    <input
+      id="messageInput"
+      type="text"
+      placeholder="Ask anything..."
+      class="flex-1 p-4 rounded-2xl bg-[#171717] outline-none"
+    />
+
+    <button
+      onclick="sendMessage()"
+      class="bg-orange-500 px-6 rounded-2xl font-bold"
+    >
+      Send
+    </button>
+  </div>
+</div>
+
+
+<!-- LOGIN MODAL -->
+<div id="loginModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+
+  <div class="glass p-8 rounded-3xl w-[350px] border border-orange-500">
+
+    <h1 class="text-3xl font-bold text-orange-400 text-center mb-6">
+      OXE AI
+    </h1>
+
+    <input
+      id="username"
+      type="text"
+      placeholder="Username"
+      class="w-full p-3 rounded-xl bg-black mb-4"
+    />
+
+    <input
+      id="phone"
+      type="text"
+      placeholder="Phone Number"
+      class="w-full p-3 rounded-xl bg-black mb-4"
+    />
+
+    <input
+      id="password"
+      type="password"
+      placeholder="Password"
+      class="w-full p-3 rounded-xl bg-black mb-4"
+    />
+
+    <p class="text-red-500 text-sm mb-4">
+      Use your real phone number so you can log in easily later.
+      There is currently no password recovery system.
+      Please use a password you will never forget.
+    </p>
+
+    <button
+      onclick="createAccount()"
+      class="w-full bg-orange-500 p-3 rounded-xl font-bold"
+    >
+      Create Account
+    </button>
+
+    <button
+      onclick="login()"
+      class="w-full bg-purple-600 p-3 rounded-xl font-bold mt-4"
+    >
+      Login
+    </button>
+
+    <button
+      onclick="guestMode()"
+      class="w-full border border-orange-500 p-3 rounded-xl mt-4"
+    >
+      Continue as Guest
+    </button>
+  </div>
+</div>
+
+<script>
+
+// ===========================
+// CONFIG
+// ===========================
+
+const BACKEND_URL = "http://localhost:5000/chat"
+
+// ===========================
+// STORAGE
+// ===========================
+
+let guestMessages = 0
+
+// ===========================
+// CHAT FUNCTION
+// ===========================
+
+async function sendMessage() {
+
+  const input = document.getElementById('messageInput')
+  const chatBox = document.getElementById('chatBox')
+
+  const message = input.value.trim()
+
+  if (!message) return
+
+  // Guest limit
+  if (localStorage.getItem('guest') === 'true') {
+
+    guestMessages++
+
+    if (guestMessages > 10) {
+      alert('Guest limit reached. Create account for unlimited access.')
+      return
+    }
+  }
+
+  // Add user message
+  addMessage(message, 'user')
+
+  input.value = ''
+
+  try {
+
+    const response = await fetch(BACKEND_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message
+      })
+    })
+
+    const data = await response.json()
+
+    addMessage(data.reply, 'ai')
+
+  } catch (error) {
+
+    addMessage('Connection failed.', 'ai')
+  }
+}
+
+// ===========================
+// ADD MESSAGE
+// ===========================
+
+function addMessage(text, type) {
+
+  const chatBox = document.getElementById('chatBox')
+
+  const div = document.createElement('div')
+
+  div.className = `
+    ${type}
+    max-w-[80%]
+    p-4
+    rounded-2xl
+  `
+
+  div.innerText = text
+
+  chatBox.appendChild(div)
+
+  chatBox.scrollTop = chatBox.scrollHeight
+}
+
+// ===========================
+// ACCOUNT SYSTEM
+// ===========================
+
+function createAccount() {
+
+  const username = document.getElementById('username').value
+  const phone = document.getElementById('phone').value
+  const password = document.getElementById('password').value
+
+  if (!username || !phone || !password) {
+    alert('Fill all fields')
+    return
+  }
+
+  const user = {
+    username,
+    phone,
+    password
+  }
+
+  localStorage.setItem('oxeUser', JSON.stringify(user))
+
+  alert('Account created successfully')
+
+  sendUserToEmail(username, phone)
+
+  closeModal()
+}
+
+// ===========================
+// LOGIN
+// ===========================
+
+function login() {
+
+  const phone = document.getElementById('phone').value
+  const password = document.getElementById('password').value
+
+  const user = JSON.parse(localStorage.getItem('oxeUser'))
+
+  if (!user) {
+    alert('No account found')
+    return
+  }
+
+  if (user.phone === phone && user.password === password) {
+
+    localStorage.setItem('loggedIn', 'true')
+
+    closeModal()
+
+    addMessage('Welcome back to OXE AI.', 'ai')
+
+  } else {
+
+    alert('Invalid login details')
+  }
+}
+
+// ===========================
+// GUEST MODE
+// ===========================
+
+function guestMode() {
+
+  localStorage.setItem('guest', 'true')
+
+  closeModal()
+
+  addMessage('Welcome Guest User.', 'ai')
+}
+
+// ===========================
+// LOGOUT
+// ===========================
+
+function logout() {
+
+  localStorage.removeItem('loggedIn')
+  localStorage.removeItem('guest')
+
+  location.reload()
+}
+
+// ===========================
+// CLOSE MODAL
+// ===========================
+
+function closeModal() {
+
+  document.getElementById('loginModal').style.display = 'none'
+}
+
+// ===========================
+// EMAIL FUNCTION
+// ===========================
+
+function sendUserToEmail(username, phone) {
+
+  console.log('Send to email:', username, phone)
+
+  // REAL EMAIL SENDING HAPPENS IN BACKEND
+}
+
+// ===========================
+// ENTER KEY
+// ===========================
+
+document
+  .getElementById('messageInput')
+  .addEventListener('keypress', function(e) {
+
+    if (e.key === 'Enter') {
+      sendMessage()
+    }
+  })
+
+// ===========================
+// PHILLIMON DETECTION
+// ===========================
+
+async function specialCheck(message) {
+
+  if (
+    message.toLowerCase().includes('i am phillimon') ||
+    message.toLowerCase().includes('ndine phillimon')
+  ) {
+
+    const password = prompt('Enter creator verification password')
+
+    if (password === 'Phillimon0026') {
+
+      addMessage(
+        'Welcome back Creator Phillimon Isaac. Respect level activated.',
+        'ai'
+      )
+
+    } else {
+
+      addMessage(
+        'Verification failed. You are not recognized as the verified creator.',
+        'ai'
+      )
+    }
+  }
+}
+
+// ===========================
+// STARTUP
+// ===========================
+
+window.onload = () => {
+
+  if (
+    localStorage.getItem('loggedIn') === 'true' ||
+    localStorage.getItem('guest') === 'true'
+  ) {
+
+    closeModal()
+
+    addMessage(
+      'Welcome to OXE AI. Ask anything.',
+      'ai'
+    )
+  }
+}
+
+</script>
+
+</body>
+</html>
